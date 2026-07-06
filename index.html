@@ -30,6 +30,10 @@
   .del-btn{border:none; background:none; color:#ef4444; font-size:16px; padding:2px 6px;}
   .vol-badge{font-weight:400; font-size:13px; color:var(--muted);}
   .field{margin-bottom:10px;}
+  .date-row{display:flex; align-items:stretch; gap:8px; margin-bottom:10px;}
+  .date-row .step{border:1px solid var(--line); background:#fff; border-radius:10px; padding:0 16px; font-size:18px; color:var(--text);}
+  .date-disp{position:relative; flex:1; border:1px solid var(--line); border-radius:10px; padding:11px 4px; text-align:center; font-size:15px; font-weight:500; background:#fff;}
+  .date-disp input{position:absolute; inset:0; width:100%; height:100%; opacity:0; border:none; padding:0;}
   button.primary{width:100%; padding:13px; font-size:16px; font-weight:600; color:#fff; background:var(--green); border:none; border-radius:12px;}
   button.primary:active{opacity:.8;}
   button.ghost{width:100%; padding:11px; font-size:15px; color:var(--green); background:#fff; border:1px solid var(--green); border-radius:12px; margin-top:8px;}
@@ -67,7 +71,12 @@
 <!-- 记录页 -->
 <div class="page active" id="page-today">
   <div class="card">
-    <div class="field"><label>日期</label><input type="date" id="in-date"></div>
+    <label>日期</label>
+    <div class="date-row">
+      <button class="step" onclick="stepDate('in-date',-1)">‹</button>
+      <div class="date-disp"><span id="in-date-disp"></span><input type="date" id="in-date"></div>
+      <button class="step" onclick="stepDate('in-date',1)">›</button>
+    </div>
     <div class="grid2">
       <div class="field"><label>碳水 (g)</label><input type="number" id="in-c" inputmode="decimal" placeholder="0"></div>
       <div class="field"><label>脂肪 (g)</label><input type="number" id="in-f" inputmode="decimal" placeholder="0"></div>
@@ -85,7 +94,12 @@
 <!-- 力训页 -->
 <div class="page" id="page-lift">
   <div class="card">
-    <div class="field"><label>日期</label><input type="date" id="lift-date"></div>
+    <label>日期</label>
+    <div class="date-row">
+      <button class="step" onclick="stepDate('lift-date',-1)">‹</button>
+      <div class="date-disp"><span id="lift-date-disp"></span><input type="date" id="lift-date"></div>
+      <button class="step" onclick="stepDate('lift-date',1)">›</button>
+    </div>
     <div class="field"><label>动作名称</label>
       <input type="text" id="lift-name" list="ex-names" placeholder="如:卧推、深蹲、硬拉">
       <datalist id="ex-names"></datalist>
@@ -210,6 +224,25 @@ function switchTab(name,btn){
   if(name==="month") renderMonth();
 }
 
+/* ---------- 日期显示与切换 ---------- */
+function dispDate(id){
+  const inp=document.getElementById(id);
+  if(!inp.value) return;
+  const [y,m,d]=inp.value.split("-").map(Number);
+  const dt=new Date(y,m-1,d);
+  const wd=["日","一","二","三","四","五","六"][dt.getDay()];
+  let s=`${m}月${d}日 周${wd}`;
+  if(y!==new Date().getFullYear()) s=y+"年"+s;
+  if(inp.value===todayStr()) s+=" (今天)";
+  document.getElementById(id+"-disp").textContent=s;
+}
+function stepDate(id,n){
+  const inp=document.getElementById(id);
+  const [y,m,d]=inp.value.split("-").map(Number);
+  inp.value=fmtDate(new Date(y,m-1,d+n));
+  if(id==="in-date") loadEntryToForm(); else renderLift();
+}
+
 /* ---------- 记录页 ---------- */
 function loadEntryToForm(){
   const ds=document.getElementById("in-date").value;
@@ -217,6 +250,7 @@ function loadEntryToForm(){
   ["c","f","p","w"].forEach(k=>{
     document.getElementById("in-"+k).value = (e[k]!=null ? e[k] : "");
   });
+  dispDate("in-date");
   renderProgress();
 }
 function saveEntry(){
@@ -283,6 +317,7 @@ function delLift(ds,i){
 }
 function renderLift(){
   const ds=document.getElementById("lift-date").value;
+  dispDate("lift-date");
   const list=data.workouts[ds]||[];
   const total=dayVolume(ds);
   document.getElementById("lift-total").textContent=
