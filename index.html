@@ -16,12 +16,9 @@
     --green:#10b981; --carb:#f59e0b; --fat:#ef4444; --pro:#3b82f6; --weight:#10b981; --kcal:#f97316;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html{background:var(--bg); height:100%;}
   body{margin:0; font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif; background:var(--bg); color:var(--text);
-       padding-bottom:calc(58px + env(safe-area-inset-bottom));
-       min-height:100vh; min-height:100dvh;}
+       padding-bottom:calc(58px + env(safe-area-inset-bottom));}
   header{background:var(--green); color:#fff; padding:calc(12px + env(safe-area-inset-top)) 16px 12px; font-size:18px; font-weight:600;}
-  .spacer{height:50vh; visibility:hidden;}
   .page{display:none; padding:14px;}
   .page.active{display:block;}
   .card{background:var(--card); border-radius:14px; padding:14px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,.06);}
@@ -140,7 +137,6 @@
     <h3>当日训练 <span class="vol-badge" id="lift-total"></span></h3>
     <div id="lift-list"></div>
   </div>
-  <div class="spacer"></div>
 </div>
 
 <!-- 周表页 -->
@@ -685,13 +681,6 @@ renderLift();
 window.addEventListener("resize", ()=>{
   if(document.getElementById("page-week").classList.contains("active")) renderWeek();
   if(document.getElementById("page-month").classList.contains("active")) renderMonth();
-});
-// iOS 键盘收起后固定底栏错位的修复
-document.addEventListener("focusout", ()=>{
-  setTimeout(()=>window.scrollTo(0, window.scrollY), 50);
-  setTimeout(()=>{ document.body.style.transform="translateZ(0)";
-    requestAnimationFrame(()=>document.body.style.transform=""); }, 100);
-});
-</script>
+});</script>
 </body>
 </html>
