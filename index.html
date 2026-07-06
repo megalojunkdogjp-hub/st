@@ -682,6 +682,12 @@ window.addEventListener("resize", ()=>{
   if(document.getElementById("page-week").classList.contains("active")) renderWeek();
   if(document.getElementById("page-month").classList.contains("active")) renderMonth();
 });
+// iOS 键盘收起后固定底栏错位的修复
+document.addEventListener("focusout", ()=>{
+  setTimeout(()=>window.scrollTo(0, window.scrollY), 50);
+  setTimeout(()=>{ document.body.style.transform="translateZ(0)";
+    requestAnimationFrame(()=>document.body.style.transform=""); }, 100);
+});
 </script>
 </body>
 </html>
