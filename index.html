@@ -11,11 +11,11 @@
 <style>
   :root{
     --bg:#f4f6f8; --card:#ffffff; --text:#1f2937; --muted:#6b7280; --line:#e5e7eb;
-    --green:#10b981; --carb:#f59e0b; --fat:#ef4444; --pro:#3b82f6; --weight:#10b981;
+    --green:#10b981; --carb:#f59e0b; --fat:#ef4444; --pro:#3b82f6; --weight:#10b981; --kcal:#f97316;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   body{margin:0; font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif; background:var(--bg); color:var(--text);
-       padding-bottom:calc(64px + env(safe-area-inset-bottom));}
+       padding-bottom:calc(58px + env(safe-area-inset-bottom));}
   header{background:var(--green); color:#fff; padding:calc(12px + env(safe-area-inset-top)) 16px 12px; font-size:18px; font-weight:600;}
   .page{display:none; padding:14px;}
   .page.active{display:block;}
@@ -29,6 +29,11 @@
   .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
   .del-btn{border:none; background:none; color:#ef4444; font-size:16px; padding:2px 6px;}
   .vol-badge{font-weight:400; font-size:13px; color:var(--muted);}
+  .kcal-box{text-align:center; padding:4px 0 14px; border-bottom:1px solid var(--line); margin-bottom:14px;}
+  .kcal-num{font-size:38px; font-weight:700; color:var(--kcal); line-height:1.2;}
+  .kcal-num small{font-size:15px; font-weight:500; color:var(--muted);}
+  .kcal-src{font-size:12px; color:var(--muted); margin-top:6px;}
+  .kcal-box .bar-bg{margin-top:10px;}
   .field{margin-bottom:10px;}
   .date-row{display:flex; align-items:stretch; gap:8px; margin-bottom:10px;}
   .date-row .step{border:1px solid var(--line); background:#fff; border-radius:10px; padding:0 16px; font-size:18px; color:var(--text);}
@@ -55,8 +60,8 @@
   .legend{display:flex; gap:14px; justify-content:center; font-size:12px; color:var(--muted); margin-top:6px; flex-wrap:wrap;}
   .legend span::before{content:""; display:inline-block; width:10px; height:10px; border-radius:5px; margin-right:4px; background:var(--c);}
   .tabbar{position:fixed; bottom:0; left:0; right:0; display:flex; background:#fff; border-top:1px solid var(--line);
-          padding-bottom:env(safe-area-inset-bottom); z-index:10;}
-  .tabbar button{flex:1; padding:10px 0 8px; border:none; background:none; font-size:12px; color:var(--muted);}
+          padding-bottom:max(calc(env(safe-area-inset-bottom) - 14px), 2px); z-index:10;}
+  .tabbar button{flex:1; padding:7px 0 5px; border:none; background:none; font-size:12px; color:var(--muted);}
   .tabbar button.active{color:var(--green); font-weight:600;}
   .tabbar .icon{font-size:20px; display:block; margin-bottom:2px;}
   #toast{position:fixed; left:50%; bottom:90px; transform:translateX(-50%); background:rgba(31,41,55,.92); color:#fff;
@@ -77,17 +82,32 @@
       <div class="date-disp"><span id="in-date-disp"></span><input type="date" id="in-date"></div>
       <button class="step" onclick="stepDate('in-date',1)">›</button>
     </div>
-    <div class="grid2">
-      <div class="field"><label>碳水 (g)</label><input type="number" id="in-c" inputmode="decimal" placeholder="0"></div>
-      <div class="field"><label>脂肪 (g)</label><input type="number" id="in-f" inputmode="decimal" placeholder="0"></div>
-      <div class="field"><label>蛋白质 (g)</label><input type="number" id="in-p" inputmode="decimal" placeholder="0"></div>
-      <div class="field"><label>体重 (kg)</label><input type="number" id="in-w" inputmode="decimal" placeholder="0.0"></div>
+    <div class="field"><label>名称 (可选)</label>
+      <input type="text" id="meal-n" list="meal-names" placeholder="如:早餐、加餐、奶茶">
+      <datalist id="meal-names"></datalist>
     </div>
-    <button class="primary" onclick="saveEntry()">保存</button>
+    <div class="grid2">
+      <div class="field"><label>碳水 (g)</label><input type="number" id="meal-c" inputmode="decimal" placeholder="0"></div>
+      <div class="field"><label>脂肪 (g)</label><input type="number" id="meal-f" inputmode="decimal" placeholder="0"></div>
+      <div class="field"><label>蛋白质 (g)</label><input type="number" id="meal-p" inputmode="decimal" placeholder="0"></div>
+      <div class="field"><label>额外卡路里 (kcal)</label><input type="number" id="meal-x" inputmode="decimal" placeholder="0"></div>
+    </div>
+    <button class="primary" onclick="addMeal()">添加一餐</button>
+  </div>
+  <div class="card scrollx">
+    <h3>当日饮食 <span class="vol-badge" id="meal-total"></span></h3>
+    <div id="meal-list"></div>
   </div>
   <div class="card">
-    <h3>目标完成度</h3>
+    <h3>今日热量与目标</h3>
     <div id="progress"></div>
+  </div>
+  <div class="card">
+    <h3>体重</h3>
+    <div class="grid2">
+      <input type="number" id="in-w" inputmode="decimal" placeholder="0.0 kg">
+      <button class="primary" style="padding:10px" onclick="saveWeight()">保存体重</button>
+    </div>
   </div>
 </div>
 
@@ -105,9 +125,9 @@
       <datalist id="ex-names"></datalist>
     </div>
     <div class="grid3">
-      <div class="field"><label>重量 (kg)</label><input type="number" id="lift-w" inputmode="decimal" placeholder="0"></div>
-      <div class="field"><label>次数</label><input type="number" id="lift-r" inputmode="numeric" placeholder="0"></div>
       <div class="field"><label>组数</label><input type="number" id="lift-s" inputmode="numeric" placeholder="0"></div>
+      <div class="field"><label>次数</label><input type="number" id="lift-r" inputmode="numeric" placeholder="0"></div>
+      <div class="field"><label>重量 (kg)</label><input type="number" id="lift-w" inputmode="decimal" placeholder="0"></div>
     </div>
     <button class="primary" onclick="addLift()">添加动作</button>
   </div>
@@ -125,6 +145,7 @@
     <button onclick="shiftWeek(1)">›</button>
   </div>
   <div class="card scrollx"><h3>本周数据</h3><div id="week-table"></div></div>
+  <div class="card"><h3>热量趋势 (kcal)</h3><canvas id="week-kcal"></canvas></div>
   <div class="card"><h3>营养摄入趋势 (g)</h3><canvas id="week-macro"></canvas>
     <div class="legend"><span style="--c:var(--carb)">碳水</span><span style="--c:var(--fat)">脂肪</span><span style="--c:var(--pro)">蛋白质</span></div>
   </div>
@@ -140,6 +161,7 @@
     <button onclick="shiftMonth(1)">›</button>
   </div>
   <div class="card scrollx"><h3>本月数据</h3><div id="month-table"></div></div>
+  <div class="card"><h3>热量趋势 (kcal)</h3><canvas id="month-kcal"></canvas></div>
   <div class="card"><h3>营养摄入趋势 (g)</h3><canvas id="month-macro"></canvas>
     <div class="legend"><span style="--c:var(--carb)">碳水</span><span style="--c:var(--fat)">脂肪</span><span style="--c:var(--pro)">蛋白质</span></div>
   </div>
@@ -160,7 +182,8 @@
   </div>
   <div class="card">
     <h3>数据备份</h3>
-    <button class="ghost" onclick="exportCSV()">导出 CSV (可用 Excel 打开)</button>
+    <button class="ghost" onclick="exportCSV()">导出每日汇总 CSV</button>
+    <button class="ghost" onclick="exportMealCSV()">导出饮食明细 CSV</button>
     <button class="ghost" onclick="exportLiftCSV()">导出力训明细 CSV</button>
     <button class="ghost" onclick="exportJSON()">导出 JSON 备份</button>
     <button class="ghost" onclick="document.getElementById('import-file').click()">导入 JSON 备份</button>
@@ -191,12 +214,26 @@ let data = loadData();
 let weekOffset = 0;
 let monthDate = new Date();
 
+function migrate(d){
+  d.workouts = d.workouts || {};
+  d.meals = d.meals || {};
+  Object.keys(d.entries).forEach(ds=>{
+    const e=d.entries[ds];
+    if(e.c!=null || e.f!=null || e.p!=null || e.x!=null){
+      if(!d.meals[ds]) d.meals[ds]=[];
+      d.meals[ds].push({n:"记录", c:e.c||0, f:e.f||0, p:e.p||0, x:e.x||0});
+      delete e.c; delete e.f; delete e.p; delete e.x;
+      if(Object.keys(e).length===0) delete d.entries[ds];
+    }
+  });
+  return d;
+}
 function loadData(){
   try{
     const d = JSON.parse(localStorage.getItem(KEY));
-    if(d && d.entries && d.goals){ d.workouts = d.workouts || {}; return d; }
+    if(d && d.entries && d.goals) return migrate(d);
   }catch(e){}
-  return {goals:{c:200,f:60,p:120}, entries:{}, workouts:{}};
+  return {goals:{c:200,f:60,p:120}, entries:{}, workouts:{}, meals:{}};
 }
 function persist(){ localStorage.setItem(KEY, JSON.stringify(data)); }
 
@@ -243,42 +280,109 @@ function stepDate(id,n){
   if(id==="in-date") loadEntryToForm(); else renderLift();
 }
 
-/* ---------- 记录页 ---------- */
+/* ---------- 记录页(分餐) ---------- */
+function dayMacro(ds){
+  const t={c:0,f:0,p:0,x:0};
+  (data.meals[ds]||[]).forEach(m=>{ t.c+=m.c||0; t.f+=m.f||0; t.p+=m.p||0; t.x+=m.x||0; });
+  return t;
+}
+function mealKcal(m){ return ((m.c||0)+(m.p||0))*4 + (m.f||0)*9 + (m.x||0); }
+function dayKcal(ds){
+  if(!(data.meals[ds]&&data.meals[ds].length)) return null;
+  const t=dayMacro(ds);
+  return (t.c+t.p)*4 + t.f*9 + t.x;
+}
+function kcalGoal(){
+  return (data.goals.c||0)*4 + (data.goals.p||0)*4 + (data.goals.f||0)*9;
+}
 function loadEntryToForm(){
   const ds=document.getElementById("in-date").value;
   const e=data.entries[ds]||{};
-  ["c","f","p","w"].forEach(k=>{
-    document.getElementById("in-"+k).value = (e[k]!=null ? e[k] : "");
-  });
+  document.getElementById("in-w").value = (e.w!=null ? e.w : "");
   dispDate("in-date");
+  renderMeals();
   renderProgress();
 }
-function saveEntry(){
+function refreshMealNames(){
+  const names=new Set();
+  Object.values(data.meals).forEach(list=>list.forEach(m=>{ if(m.n&&m.n!=="记录") names.add(m.n); }));
+  document.getElementById("meal-names").innerHTML=
+    [...names].map(n=>`<option value="${n}">`).join("");
+}
+function addMeal(){
   const ds=document.getElementById("in-date").value;
   if(!ds){ toast("请选择日期"); return; }
-  const e={};
-  ["c","f","p","w"].forEach(k=>{
-    const v=parseFloat(document.getElementById("in-"+k).value);
-    if(!isNaN(v)) e[k]=v;
+  const m={n:document.getElementById("meal-n").value.trim()};
+  let has=false;
+  [["c","meal-c"],["f","meal-f"],["p","meal-p"],["x","meal-x"]].forEach(([k,id])=>{
+    const v=parseFloat(document.getElementById(id).value);
+    if(!isNaN(v)&&v!==0){ m[k]=v; has=true; }
   });
-  if(Object.keys(e).length===0){ delete data.entries[ds]; }
-  else data.entries[ds]=e;
-  persist(); renderProgress(); toast("已保存 ✓");
+  if(!has){ toast("至少填一项数值"); return; }
+  if(!data.meals[ds]) data.meals[ds]=[];
+  data.meals[ds].push(m);
+  persist(); renderMeals(); renderProgress();
+  ["meal-n","meal-c","meal-f","meal-p","meal-x"].forEach(id=>document.getElementById(id).value="");
+  toast("已添加 ✓");
+}
+function delMeal(ds,i){
+  data.meals[ds].splice(i,1);
+  if(data.meals[ds].length===0) delete data.meals[ds];
+  persist(); renderMeals(); renderProgress();
+}
+function renderMeals(){
+  const ds=document.getElementById("in-date").value;
+  const list=data.meals[ds]||[];
+  const kc=dayKcal(ds);
+  document.getElementById("meal-total").textContent=
+    list.length? `${Math.round(kc)} kcal · ${list.length} 条` : "";
+  if(list.length===0){
+    document.getElementById("meal-list").innerHTML=
+      '<p class="hint" style="text-align:center">当天还没有饮食记录</p>';
+  }else{
+    let html="<table><tr><th style='text-align:left'>名称</th><th>碳水</th><th>脂肪</th><th>蛋白</th><th>额外</th><th>kcal</th><th></th></tr>";
+    list.forEach((m,i)=>{
+      html+=`<tr><td style="text-align:left">${m.n||"–"}</td>
+        <td>${m.c??"–"}</td><td>${m.f??"–"}</td><td>${m.p??"–"}</td><td>${m.x??"–"}</td>
+        <td><b>${Math.round(mealKcal(m))}</b></td>
+        <td><button class="del-btn" onclick="delMeal('${ds}',${i})">✕</button></td></tr>`;
+    });
+    html+="</table>";
+    document.getElementById("meal-list").innerHTML=html;
+  }
+  refreshMealNames();
+}
+function saveWeight(){
+  const ds=document.getElementById("in-date").value;
+  if(!ds){ toast("请选择日期"); return; }
+  const v=parseFloat(document.getElementById("in-w").value);
+  if(isNaN(v)){
+    if(data.entries[ds]){ delete data.entries[ds].w; if(Object.keys(data.entries[ds]).length===0) delete data.entries[ds]; }
+  }else{
+    if(!data.entries[ds]) data.entries[ds]={};
+    data.entries[ds].w=v;
+  }
+  persist(); toast("体重已保存 ✓");
 }
 function renderProgress(){
   const ds=document.getElementById("in-date").value;
-  const e=data.entries[ds]||{};
-  let html="";
+  const t=dayMacro(ds);
+  const kcal=dayKcal(ds)||0, kg=kcalGoal();
+  const kpct=kg>0?Math.min(100,kcal/kg*100):0;
+  let html=`<div class="kcal-box">
+    <div class="kcal-num">${Math.round(kcal)}<small> / ${Math.round(kg)} kcal (${kg>0?Math.round(kcal/kg*100):0}%)</small></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${kpct}%;background:var(--kcal)"></div></div>
+    <div class="kcal-src">碳水 ${Math.round(t.c*4)} + 蛋白 ${Math.round(t.p*4)} + 脂肪 ${Math.round(t.f*9)} + 额外 ${Math.round(t.x)}</div>
+  </div>`;
   FIELDS.forEach(f=>{
     const goal=data.goals[f.k]||0;
-    const val=e[f.k]!=null?e[f.k]:0;
+    const val=Math.round(t[f.k]*10)/10;
     const pct=goal>0?Math.min(100,val/goal*100):0;
     html+=`<div class="bar-row">
       <div class="bar-top"><span>${f.name}</span><span>${val} / ${goal} g (${goal>0?Math.round(val/goal*100):0}%)</span></div>
       <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${f.color}"></div></div>
     </div>`;
   });
-  if(e.w!=null) html+=`<div class="bar-top"><span>体重</span><span>${e.w} kg</span></div>`;
   document.getElementById("progress").innerHTML=html;
 }
 
@@ -326,9 +430,9 @@ function renderLift(){
     document.getElementById("lift-list").innerHTML=
       '<p class="hint" style="text-align:center">当天还没有训练记录</p>';
   }else{
-    let html="<table><tr><th style='text-align:left'>动作</th><th>重量kg</th><th>次数</th><th>组数</th><th>容量</th><th></th></tr>";
+    let html="<table><tr><th style='text-align:left'>动作</th><th>组数</th><th>次数</th><th>重量kg</th><th>容量</th><th></th></tr>";
     list.forEach((x,i)=>{
-      html+=`<tr><td style="text-align:left">${x.n}</td><td>${x.w}</td><td>${x.r}</td><td>${x.s}</td>
+      html+=`<tr><td style="text-align:left">${x.n}</td><td>${x.s}</td><td>${x.r}</td><td>${x.w}</td>
         <td>${Math.round(x.w*x.r*x.s)}</td>
         <td><button class="del-btn" onclick="delLift('${ds}',${i})">✕</button></td></tr>`;
     });
@@ -341,23 +445,29 @@ function renderLift(){
 /* ---------- 表格生成 ---------- */
 function buildTable(dates, labels){
   const today=todayStr();
-  let html="<table><tr><th>日期</th><th>碳水g</th><th>脂肪g</th><th>蛋白g</th><th>体重kg</th><th>容量kg</th></tr>";
-  const sums={c:0,f:0,p:0,w:0,v:0}, counts={c:0,f:0,p:0,w:0,v:0};
+  let html="<table><tr><th>日期</th><th>热量kcal</th><th>碳水g</th><th>脂肪g</th><th>蛋白g</th><th>体重kg</th><th>容量kg</th></tr>";
+  const sums={kc:0,c:0,f:0,p:0,w:0,v:0}, counts={kc:0,c:0,f:0,p:0,w:0,v:0};
   dates.forEach((ds,i)=>{
     const e=data.entries[ds]||{};
     html+=`<tr class="${ds===today?"today":""}"><td>${labels[i]}</td>`;
-    ["c","f","p","w"].forEach(k=>{
-      if(e[k]!=null){ sums[k]+=e[k]; counts[k]++; html+=`<td>${e[k]}</td>`; }
+    const kc=dayKcal(ds);
+    const t=kc!=null?dayMacro(ds):null;
+    if(kc!=null){ sums.kc+=kc; counts.kc++; html+=`<td><b>${Math.round(kc)}</b></td>`; }
+    else html+=`<td class="empty">–</td>`;
+    ["c","f","p"].forEach(k=>{
+      if(t){ sums[k]+=t[k]; counts[k]++; html+=`<td>${Math.round(t[k]*10)/10}</td>`; }
       else html+=`<td class="empty">–</td>`;
     });
+    if(e.w!=null){ sums.w+=e.w; counts.w++; html+=`<td>${e.w}</td>`; }
+    else html+=`<td class="empty">–</td>`;
     const v=dayVolume(ds);
     if(v>0){ sums.v+=v; counts.v++; html+=`<td>${Math.round(v)}</td>`; }
     else html+=`<td class="empty">–</td>`;
     html+="</tr>";
   });
   html+=`<tr class="avg"><td>平均</td>`;
-  ["c","f","p","w","v"].forEach(k=>{
-    html+= counts[k]? `<td>${(sums[k]/counts[k]).toFixed(k==="v"?0:1)}</td>` : `<td class="empty">–</td>`;
+  ["kc","c","f","p","w","v"].forEach(k=>{
+    html+= counts[k]? `<td>${(sums[k]/counts[k]).toFixed(k==="v"||k==="kc"?0:1)}</td>` : `<td class="empty">–</td>`;
   });
   html+="</tr></table>";
   return html;
@@ -418,7 +528,8 @@ function drawChart(canvasId, labels, series, beginZero){
 }
 function seriesFor(dates){
   const macro=FIELDS.map(f=>({color:f.color, values:dates.map(ds=>{
-    const e=data.entries[ds]; return e&&e[f.k]!=null?e[f.k]:null;
+    if(!(data.meals[ds]&&data.meals[ds].length)) return null;
+    return dayMacro(ds)[f.k];
   })}));
   const weight=[{color:"#10b981", values:dates.map(ds=>{
     const e=data.entries[ds]; return e&&e.w!=null?e.w:null;
@@ -426,7 +537,8 @@ function seriesFor(dates){
   const vol=[{color:"#8b5cf6", values:dates.map(ds=>{
     const v=dayVolume(ds); return v>0?v:null;
   })}];
-  return {macro,weight,vol};
+  const kcal=[{color:"#f97316", values:dates.map(ds=>dayKcal(ds))}];
+  return {macro,weight,vol,kcal};
 }
 
 /* ---------- 周表 ---------- */
@@ -448,6 +560,7 @@ function renderWeek(){
     `${monday.getMonth()+1}月${monday.getDate()}日 – ${end.getMonth()+1}月${end.getDate()}日`;
   document.getElementById("week-table").innerHTML=buildTable(dates,labels);
   const s=seriesFor(dates);
+  drawChart("week-kcal", short, s.kcal, true);
   drawChart("week-macro", short, s.macro, true);
   drawChart("week-weight", short, s.weight, false);
   drawChart("week-vol", short, s.vol, true);
@@ -468,6 +581,7 @@ function renderMonth(){
   document.getElementById("month-title").textContent=`${y}年${m+1}月`;
   document.getElementById("month-table").innerHTML=buildTable(dates,labels);
   const s=seriesFor(dates);
+  drawChart("month-kcal", short, s.kcal, true);
   drawChart("month-macro", short, s.macro, true);
   drawChart("month-weight", short, s.weight, false);
   drawChart("month-vol", short, s.vol, true);
@@ -489,15 +603,27 @@ function download(name, content, type){
   setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500);
 }
 function exportCSV(){
-  let csv="﻿日期,碳水(g),脂肪(g),蛋白质(g),体重(kg),训练容量(kg)\n";
-  const allDates=new Set([...Object.keys(data.entries), ...Object.keys(data.workouts)]);
+  let csv="﻿日期,总热量(kcal),碳水(g),脂肪(g),蛋白质(g),额外卡路里(kcal),体重(kg),训练容量(kg)\n";
+  const allDates=new Set([...Object.keys(data.entries), ...Object.keys(data.workouts), ...Object.keys(data.meals)]);
   [...allDates].sort().forEach(ds=>{
     const e=data.entries[ds]||{};
     const v=dayVolume(ds);
-    csv+=[ds, e.c??"", e.f??"", e.p??"", e.w??"", v>0?Math.round(v):""].join(",")+"\n";
+    const kc=dayKcal(ds);
+    const t=kc!=null?dayMacro(ds):null;
+    csv+=[ds, kc!=null?Math.round(kc):"", t?t.c:"", t?t.f:"", t?t.p:"", t?t.x:"", e.w??"", v>0?Math.round(v):""].join(",")+"\n";
   });
   download("营养记录_"+todayStr()+".csv", csv, "text/csv");
   toast("已导出 CSV");
+}
+function exportMealCSV(){
+  let csv="﻿日期,名称,碳水(g),脂肪(g),蛋白质(g),额外卡路里(kcal),热量(kcal)\n";
+  Object.keys(data.meals).sort().forEach(ds=>{
+    data.meals[ds].forEach(m=>{
+      csv+=[ds, m.n||"", m.c??"", m.f??"", m.p??"", m.x??"", Math.round(mealKcal(m))].join(",")+"\n";
+    });
+  });
+  download("饮食明细_"+todayStr()+".csv", csv, "text/csv");
+  toast("已导出饮食明细");
 }
 function exportLiftCSV(){
   let csv="﻿日期,动作,重量(kg),次数,组数,容量(kg)\n";
@@ -522,7 +648,9 @@ function importJSON(input){
       if(!d.entries) throw 0;
       Object.assign(data.entries, d.entries);
       if(d.workouts) Object.assign(data.workouts, d.workouts);
+      if(d.meals) Object.assign(data.meals, d.meals);
       if(d.goals) Object.assign(data.goals, d.goals);
+      migrate(data);
       persist(); initSettings(); loadEntryToForm();
       toast("导入成功 ✓");
     }catch(e){ toast("文件格式不正确"); }
@@ -532,7 +660,7 @@ function importJSON(input){
 }
 function clearAll(){
   if(confirm("确定要清空全部记录吗?此操作不可恢复,建议先导出备份。")){
-    data={goals:data.goals, entries:{}, workouts:{}};
+    data={goals:data.goals, entries:{}, workouts:{}, meals:{}};
     persist(); loadEntryToForm(); renderLift(); toast("已清空");
   }
 }
