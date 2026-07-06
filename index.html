@@ -251,7 +251,7 @@ function toast(msg){
 }
 
 /* ---------- 页面切换 ---------- */
-const TITLES={today:"今日记录",lift:"力量训练",week:"周表",month:"月表",settings:"设置"};
+const TITLES={today:"今日记录 — 江湖路不远,后悔总有期.",lift:"力量训练",week:"周表",month:"月表",settings:"设置"};
 function switchTab(name,btn){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   document.getElementById("page-"+name).classList.add("active");
