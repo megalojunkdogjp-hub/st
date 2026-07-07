@@ -31,6 +31,11 @@
   .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
   .del-btn{border:none; background:none; color:#ef4444; font-size:16px; padding:2px 6px;}
   .vol-badge{font-weight:400; font-size:13px; color:var(--muted);}
+  #mood-in{font-size:20px;}
+  .pr-row{display:flex; text-align:center;}
+  .pr-item{flex:1;}
+  .pr-name{font-size:12px; color:var(--muted); margin-bottom:2px;}
+  .pr-val{font-size:20px; font-weight:700; color:var(--green);}
   .kcal-box{text-align:center; padding:4px 0 14px; border-bottom:1px solid var(--line); margin-bottom:14px;}
   .kcal-num{font-size:38px; font-weight:700; color:var(--kcal); line-height:1.2;}
   .kcal-num small{font-size:15px; font-weight:500; color:var(--muted);}
@@ -85,14 +90,14 @@
       <button class="step" onclick="stepDate('in-date',1)">›</button>
     </div>
     <div class="field"><label>名称 (可选)</label>
-      <input type="text" id="meal-n" list="meal-names" placeholder="如:早餐、加餐、奶茶">
+      <input type="text" id="meal-n" list="meal-names">
       <datalist id="meal-names"></datalist>
     </div>
     <div class="grid2">
-      <div class="field"><label>碳水 (g)</label><input type="number" id="meal-c" inputmode="decimal" placeholder="0"></div>
-      <div class="field"><label>脂肪 (g)</label><input type="number" id="meal-f" inputmode="decimal" placeholder="0"></div>
-      <div class="field"><label>蛋白质 (g)</label><input type="number" id="meal-p" inputmode="decimal" placeholder="0"></div>
-      <div class="field"><label>额外卡路里 (kcal)</label><input type="number" id="meal-x" inputmode="decimal" placeholder="0"></div>
+      <div class="field"><label>碳水 (g)</label><input type="number" id="meal-c" inputmode="decimal"></div>
+      <div class="field"><label>脂肪 (g)</label><input type="number" id="meal-f" inputmode="decimal"></div>
+      <div class="field"><label>蛋白质 (g)</label><input type="number" id="meal-p" inputmode="decimal"></div>
+      <div class="field"><label>额外卡路里 (kcal)</label><input type="number" id="meal-x" inputmode="decimal"></div>
     </div>
     <button class="primary" onclick="addMeal()">添加一餐</button>
   </div>
@@ -107,7 +112,7 @@
   <div class="card">
     <h3>体重</h3>
     <div class="grid2">
-      <input type="number" id="in-w" inputmode="decimal" placeholder="0.0 kg">
+      <input type="number" id="in-w" inputmode="decimal">
       <button class="primary" style="padding:10px" onclick="saveWeight()">保存体重</button>
     </div>
   </div>
@@ -116,6 +121,22 @@
 <!-- 力训页 -->
 <div class="page" id="page-lift">
   <div class="card">
+    <h3>PR 三大项 (kg)</h3>
+    <div class="pr-row">
+      <div class="pr-item"><div class="pr-name">深蹲</div><div class="pr-val" id="pr-sq-d">–</div></div>
+      <div class="pr-item"><div class="pr-name">卧推</div><div class="pr-val" id="pr-bp-d">–</div></div>
+      <div class="pr-item"><div class="pr-name">传统硬拉</div><div class="pr-val" id="pr-dl-d">–</div></div>
+      <div class="pr-item"><div class="pr-name">总计</div><div class="pr-val" id="pr-total-d">–</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>今日状态</h3>
+    <div class="grid2">
+      <input type="text" id="mood-in">
+      <button class="primary" style="padding:10px" onclick="saveMood()">保存状态</button>
+    </div>
+  </div>
+  <div class="card">
     <label>日期</label>
     <div class="date-row">
       <button class="step" onclick="stepDate('lift-date',-1)">‹</button>
@@ -123,15 +144,16 @@
       <button class="step" onclick="stepDate('lift-date',1)">›</button>
     </div>
     <div class="field"><label>动作名称</label>
-      <input type="text" id="lift-name" list="ex-names" placeholder="如:卧推、深蹲、硬拉">
+      <input type="text" id="lift-name" list="ex-names">
       <datalist id="ex-names"></datalist>
     </div>
     <div class="grid3">
-      <div class="field"><label>组数</label><input type="number" id="lift-s" inputmode="numeric" placeholder="0"></div>
-      <div class="field"><label>次数</label><input type="number" id="lift-r" inputmode="numeric" placeholder="0"></div>
-      <div class="field"><label>重量 (kg)</label><input type="number" id="lift-w" inputmode="decimal" placeholder="0"></div>
+      <div class="field"><label>组数</label><input type="number" id="lift-s" inputmode="numeric"></div>
+      <div class="field"><label>次数</label><input type="number" id="lift-r" inputmode="numeric"></div>
+      <div class="field"><label>重量 (kg)</label><input type="number" id="lift-w" inputmode="decimal"></div>
     </div>
     <button class="primary" onclick="addLift()">添加动作</button>
+    <p class="hint">重量填 0 或留空 = 自重动作(如引体向上),容量按你最近记录的体重计算。</p>
   </div>
   <div class="card scrollx">
     <h3>当日训练 <span class="vol-badge" id="lift-total"></span></h3>
@@ -183,6 +205,25 @@
     <button class="primary" onclick="saveGoals()">保存目标</button>
   </div>
   <div class="card">
+    <h3>PR 三大项 (kg)</h3>
+    <div class="grid3">
+      <div class="field"><label>深蹲</label><input type="number" id="pr-sq" inputmode="decimal"></div>
+      <div class="field"><label>卧推</label><input type="number" id="pr-bp" inputmode="decimal"></div>
+      <div class="field"><label>传统硬拉</label><input type="number" id="pr-dl" inputmode="decimal"></div>
+    </div>
+    <button class="primary" onclick="savePR()">保存 PR</button>
+  </div>
+  <div class="card">
+    <h3>页面标题</h3>
+    <div class="field"><label>记录页</label><input type="text" id="title-today"></div>
+    <div class="field"><label>力训页</label><input type="text" id="title-lift"></div>
+    <div class="field"><label>周表页</label><input type="text" id="title-week"></div>
+    <div class="field"><label>月表页</label><input type="text" id="title-month"></div>
+    <div class="field"><label>设置页</label><input type="text" id="title-settings"></div>
+    <button class="primary" onclick="saveTitles()">保存标题</button>
+    <p class="hint">清空某项并保存 = 恢复默认标题。</p>
+  </div>
+  <div class="card">
     <h3>数据备份</h3>
     <button class="ghost" onclick="exportCSV()">导出每日汇总 CSV</button>
     <button class="ghost" onclick="exportMealCSV()">导出饮食明细 CSV</button>
@@ -219,6 +260,13 @@ let monthDate = new Date();
 function migrate(d){
   d.workouts = d.workouts || {};
   d.meals = d.meals || {};
+  d.moods = d.moods || {};
+  d.titles = d.titles || {};
+  d.pr = d.pr || {};
+  const OLD_MOODS=["😫","😕","😐","🙂","🔥"];
+  Object.keys(d.moods).forEach(k=>{
+    if(typeof d.moods[k]==="number") d.moods[k]=OLD_MOODS[d.moods[k]]||"";
+  });
   Object.keys(d.entries).forEach(ds=>{
     const e=d.entries[ds];
     if(e.c!=null || e.f!=null || e.p!=null || e.x!=null){
@@ -235,7 +283,7 @@ function loadData(){
     const d = JSON.parse(localStorage.getItem(KEY));
     if(d && d.entries && d.goals) return migrate(d);
   }catch(e){}
-  return {goals:{c:200,f:60,p:120}, entries:{}, workouts:{}, meals:{}};
+  return {goals:{c:200,f:60,p:120}, entries:{}, workouts:{}, meals:{}, moods:{}, titles:{}, pr:{}};
 }
 function persist(){ localStorage.setItem(KEY, JSON.stringify(data)); }
 
@@ -251,13 +299,27 @@ function toast(msg){
 }
 
 /* ---------- 页面切换 ---------- */
-const TITLES={today:"今日记录 — 江湖路不远,后悔总有期.",lift:"力量训练",week:"周表",month:"月表",settings:"设置"};
+const DEF_TITLES={today:"今日记录 — 江湖路不远,后悔总有期.",lift:"力量训练",week:"周表",month:"月表",settings:"设置"};
+const PAGE_KEYS=["today","lift","week","month","settings"];
+let curPage="today";
+function getTitle(n){ return data.titles[n] || DEF_TITLES[n]; }
+function saveTitles(){
+  PAGE_KEYS.forEach(k=>{
+    const v=document.getElementById("title-"+k).value.trim();
+    if(v && v!==DEF_TITLES[k]) data.titles[k]=v;
+    else delete data.titles[k];
+  });
+  persist(); initSettings();
+  document.getElementById("hdr").textContent=getTitle(curPage);
+  toast("标题已保存 ✓");
+}
 function switchTab(name,btn){
+  curPage=name;
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   document.getElementById("page-"+name).classList.add("active");
   document.querySelectorAll(".tabbar button").forEach(b=>b.classList.remove("active"));
   btn.classList.add("active");
-  document.getElementById("hdr").textContent=TITLES[name];
+  document.getElementById("hdr").textContent=getTitle(name);
   if(name==="lift") renderLift();
   if(name==="week") renderWeek();
   if(name==="month") renderMonth();
@@ -389,8 +451,43 @@ function renderProgress(){
 }
 
 /* ---------- 力训 ---------- */
+const PR_KEYS=["sq","bp","dl"];
+function renderPR(){
+  let total=0, any=false;
+  PR_KEYS.forEach(k=>{
+    const v=data.pr[k];
+    document.getElementById("pr-"+k+"-d").textContent = v>0 ? v : "–";
+    if(v>0){ total+=v; any=true; }
+  });
+  document.getElementById("pr-total-d").textContent = any ? Math.round(total*10)/10 : "–";
+}
+function savePR(){
+  PR_KEYS.forEach(k=>{
+    const v=parseFloat(document.getElementById("pr-"+k).value);
+    if(!isNaN(v)&&v>0) data.pr[k]=v; else delete data.pr[k];
+  });
+  persist(); renderPR(); toast("PR 已保存 ✓");
+}
+function bodyWt(ds){
+  const ks=Object.keys(data.entries).filter(k=>k<=ds && data.entries[k].w!=null).sort();
+  return ks.length? data.entries[ks[ks.length-1]].w : 0;
+}
+function liftVol(ds,x){
+  return (x.w>0? x.w : bodyWt(ds)) * x.r * x.s;
+}
 function dayVolume(ds){
-  return (data.workouts[ds]||[]).reduce((t,x)=>t + x.w*x.r*x.s, 0);
+  return (data.workouts[ds]||[]).reduce((t,x)=>t + liftVol(ds,x), 0);
+}
+function saveMood(){
+  const ds=document.getElementById("lift-date").value;
+  if(!ds){ toast("请选择日期"); return; }
+  const v=document.getElementById("mood-in").value.trim();
+  if(v) data.moods[ds]=v; else delete data.moods[ds];
+  persist(); toast(v?"状态已保存 ✓":"状态已清除");
+}
+function renderMood(){
+  const ds=document.getElementById("lift-date").value;
+  document.getElementById("mood-in").value=data.moods[ds]||"";
 }
 function refreshExNames(){
   const names=new Set();
@@ -402,11 +499,12 @@ function addLift(){
   const ds=document.getElementById("lift-date").value;
   if(!ds){ toast("请选择日期"); return; }
   const n=document.getElementById("lift-name").value.trim();
-  const w=parseFloat(document.getElementById("lift-w").value);
+  let w=parseFloat(document.getElementById("lift-w").value);
+  if(isNaN(w)||w<0) w=0;
   const r=parseFloat(document.getElementById("lift-r").value);
   const s=parseFloat(document.getElementById("lift-s").value);
   if(!n){ toast("请填写动作名称"); return; }
-  if(isNaN(w)||isNaN(r)||isNaN(s)||r<=0||s<=0){ toast("请填写重量、次数、组数"); return; }
+  if(isNaN(r)||isNaN(s)||r<=0||s<=0){ toast("请填写次数和组数"); return; }
   if(!data.workouts[ds]) data.workouts[ds]=[];
   data.workouts[ds].push({n,w,r,s});
   persist(); renderLift();
@@ -434,14 +532,15 @@ function renderLift(){
   }else{
     let html="<table><tr><th style='text-align:left'>动作</th><th>组数</th><th>次数</th><th>重量kg</th><th>容量</th><th></th></tr>";
     list.forEach((x,i)=>{
-      html+=`<tr><td style="text-align:left">${x.n}</td><td>${x.s}</td><td>${x.r}</td><td>${x.w}</td>
-        <td>${Math.round(x.w*x.r*x.s)}</td>
+      html+=`<tr><td style="text-align:left">${x.n}</td><td>${x.s}</td><td>${x.r}</td><td>${x.w>0?x.w:"自重"}</td>
+        <td>${Math.round(liftVol(ds,x))}</td>
         <td><button class="del-btn" onclick="delLift('${ds}',${i})">✕</button></td></tr>`;
     });
     html+="</table>";
     document.getElementById("lift-list").innerHTML=html;
   }
   refreshExNames();
+  renderMood();
 }
 
 /* ---------- 表格生成 ---------- */
@@ -451,7 +550,8 @@ function buildTable(dates, labels){
   const sums={kc:0,c:0,f:0,p:0,w:0,v:0}, counts={kc:0,c:0,f:0,p:0,w:0,v:0};
   dates.forEach((ds,i)=>{
     const e=data.entries[ds]||{};
-    html+=`<tr class="${ds===today?"today":""}"><td>${labels[i]}</td>`;
+    const mood=data.moods[ds]? " "+data.moods[ds] : "";
+    html+=`<tr class="${ds===today?"today":""}"><td>${labels[i]}${mood}</td>`;
     const kc=dayKcal(ds);
     const t=kc!=null?dayMacro(ds):null;
     if(kc!=null){ sums.kc+=kc; counts.kc++; html+=`<td><b>${Math.round(kc)}</b></td>`; }
@@ -628,10 +728,11 @@ function exportMealCSV(){
   toast("已导出饮食明细");
 }
 function exportLiftCSV(){
-  let csv="﻿日期,动作,重量(kg),次数,组数,容量(kg)\n";
+  let csv="﻿日期,动作,重量(kg),次数,组数,容量(kg),状态\n";
   Object.keys(data.workouts).sort().forEach(ds=>{
+    const mood=data.moods[ds]||"";
     data.workouts[ds].forEach(x=>{
-      csv+=[ds, x.n, x.w, x.r, x.s, Math.round(x.w*x.r*x.s)].join(",")+"\n";
+      csv+=[ds, x.n, x.w>0?x.w:"自重", x.r, x.s, Math.round(liftVol(ds,x)), mood].join(",")+"\n";
     });
   });
   download("力训明细_"+todayStr()+".csv", csv, "text/csv");
@@ -651,6 +752,7 @@ function importJSON(input){
       Object.assign(data.entries, d.entries);
       if(d.workouts) Object.assign(data.workouts, d.workouts);
       if(d.meals) Object.assign(data.meals, d.meals);
+      if(d.moods) Object.assign(data.moods, d.moods);
       if(d.goals) Object.assign(data.goals, d.goals);
       migrate(data);
       persist(); initSettings(); loadEntryToForm();
@@ -662,12 +764,14 @@ function importJSON(input){
 }
 function clearAll(){
   if(confirm("确定要清空全部记录吗?此操作不可恢复,建议先导出备份。")){
-    data={goals:data.goals, entries:{}, workouts:{}, meals:{}};
+    data={goals:data.goals, titles:data.titles, pr:data.pr, entries:{}, workouts:{}, meals:{}, moods:{}};
     persist(); loadEntryToForm(); renderLift(); toast("已清空");
   }
 }
 function initSettings(){
   FIELDS.forEach(f=>document.getElementById("goal-"+f.k).value=data.goals[f.k]);
+  PAGE_KEYS.forEach(k=>document.getElementById("title-"+k).value=getTitle(k));
+  PR_KEYS.forEach(k=>document.getElementById("pr-"+k).value=data.pr[k]||"");
 }
 
 /* ---------- 初始化 ---------- */
@@ -678,6 +782,8 @@ document.getElementById("lift-date").addEventListener("change", renderLift);
 initSettings();
 loadEntryToForm();
 renderLift();
+renderPR();
+document.getElementById("hdr").textContent=getTitle("today");
 window.addEventListener("resize", ()=>{
   if(document.getElementById("page-week").classList.contains("active")) renderWeek();
   if(document.getElementById("page-month").classList.contains("active")) renderMonth();
