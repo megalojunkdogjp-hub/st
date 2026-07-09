@@ -130,6 +130,14 @@
     </div>
   </div>
   <div class="card">
+    <h3>今日训练</h3>
+    <div class="grid2">
+      <input type="text" id="day-in" list="day-names">
+      <button class="primary" style="padding:10px" onclick="saveDay()">保存</button>
+    </div>
+    <datalist id="day-names"></datalist>
+  </div>
+  <div class="card">
     <h3>今日状态</h3>
     <div class="grid2">
       <input type="text" id="mood-in">
@@ -174,7 +182,6 @@
     <div class="legend"><span style="--c:var(--carb)">碳水</span><span style="--c:var(--fat)">脂肪</span><span style="--c:var(--pro)">蛋白质</span></div>
   </div>
   <div class="card"><h3>体重趋势 (kg)</h3><canvas id="week-weight"></canvas></div>
-  <div class="card"><h3>训练容量趋势 (kg)</h3><canvas id="week-vol"></canvas></div>
 </div>
 
 <!-- 月表页 -->
@@ -190,7 +197,6 @@
     <div class="legend"><span style="--c:var(--carb)">碳水</span><span style="--c:var(--fat)">脂肪</span><span style="--c:var(--pro)">蛋白质</span></div>
   </div>
   <div class="card"><h3>体重趋势 (kg)</h3><canvas id="month-weight"></canvas></div>
-  <div class="card"><h3>训练容量趋势 (kg)</h3><canvas id="month-vol"></canvas></div>
 </div>
 
 <!-- 设置页 -->
@@ -263,6 +269,7 @@ function migrate(d){
   d.moods = d.moods || {};
   d.titles = d.titles || {};
   d.pr = d.pr || {};
+  d.days = d.days || {};
   const OLD_MOODS=["😫","😕","😐","🙂","🔥"];
   Object.keys(d.moods).forEach(k=>{
     if(typeof d.moods[k]==="number") d.moods[k]=OLD_MOODS[d.moods[k]]||"";
@@ -283,7 +290,7 @@ function loadData(){
     const d = JSON.parse(localStorage.getItem(KEY));
     if(d && d.entries && d.goals) return migrate(d);
   }catch(e){}
-  return {goals:{c:200,f:60,p:120}, entries:{}, workouts:{}, meals:{}, moods:{}, titles:{}, pr:{}};
+  return {goals:{c:200,f:60,p:120}, entries:{}, workouts:{}, meals:{}, moods:{}, titles:{}, pr:{}, days:{}};
 }
 function persist(){ localStorage.setItem(KEY, JSON.stringify(data)); }
 
@@ -478,6 +485,22 @@ function liftVol(ds,x){
 function dayVolume(ds){
   return (data.workouts[ds]||[]).reduce((t,x)=>t + liftVol(ds,x), 0);
 }
+function saveDay(){
+  const ds=document.getElementById("lift-date").value;
+  if(!ds){ toast("请选择日期"); return; }
+  const v=document.getElementById("day-in").value.trim();
+  if(v) data.days[ds]=v; else delete data.days[ds];
+  persist(); refreshDayNames(); toast(v?"已保存 ✓":"已清除");
+}
+function renderDayType(){
+  const ds=document.getElementById("lift-date").value;
+  document.getElementById("day-in").value=data.days[ds]||"";
+}
+function refreshDayNames(){
+  const names=new Set(Object.values(data.days));
+  document.getElementById("day-names").innerHTML=
+    [...names].map(n=>`<option value="${n}">`).join("");
+}
 function saveMood(){
   const ds=document.getElementById("lift-date").value;
   if(!ds){ toast("请选择日期"); return; }
@@ -541,17 +564,20 @@ function renderLift(){
   }
   refreshExNames();
   renderMood();
+  renderDayType();
+  refreshDayNames();
 }
 
 /* ---------- 表格生成 ---------- */
 function buildTable(dates, labels){
   const today=todayStr();
-  let html="<table><tr><th>日期</th><th>热量kcal</th><th>碳水g</th><th>脂肪g</th><th>蛋白g</th><th>体重kg</th><th>容量kg</th></tr>";
-  const sums={kc:0,c:0,f:0,p:0,w:0,v:0}, counts={kc:0,c:0,f:0,p:0,w:0,v:0};
+  let html="<table><tr><th>日期</th><th>训练</th><th>热量kcal</th><th>碳水g</th><th>脂肪g</th><th>蛋白g</th><th>体重kg</th></tr>";
+  const sums={kc:0,c:0,f:0,p:0,w:0}, counts={kc:0,c:0,f:0,p:0,w:0};
   dates.forEach((ds,i)=>{
     const e=data.entries[ds]||{};
     const mood=data.moods[ds]? " "+data.moods[ds] : "";
     html+=`<tr class="${ds===today?"today":""}"><td>${labels[i]}${mood}</td>`;
+    html+= data.days[ds]? `<td>${data.days[ds]}</td>` : `<td class="empty">–</td>`;
     const kc=dayKcal(ds);
     const t=kc!=null?dayMacro(ds):null;
     if(kc!=null){ sums.kc+=kc; counts.kc++; html+=`<td><b>${Math.round(kc)}</b></td>`; }
@@ -562,14 +588,11 @@ function buildTable(dates, labels){
     });
     if(e.w!=null){ sums.w+=e.w; counts.w++; html+=`<td>${e.w}</td>`; }
     else html+=`<td class="empty">–</td>`;
-    const v=dayVolume(ds);
-    if(v>0){ sums.v+=v; counts.v++; html+=`<td>${Math.round(v)}</td>`; }
-    else html+=`<td class="empty">–</td>`;
     html+="</tr>";
   });
-  html+=`<tr class="avg"><td>平均</td>`;
-  ["kc","c","f","p","w","v"].forEach(k=>{
-    html+= counts[k]? `<td>${(sums[k]/counts[k]).toFixed(k==="v"||k==="kc"?0:1)}</td>` : `<td class="empty">–</td>`;
+  html+=`<tr class="avg"><td>平均</td><td></td>`;
+  ["kc","c","f","p","w"].forEach(k=>{
+    html+= counts[k]? `<td>${(sums[k]/counts[k]).toFixed(k==="kc"?0:1)}</td>` : `<td class="empty">–</td>`;
   });
   html+="</tr></table>";
   return html;
@@ -636,11 +659,8 @@ function seriesFor(dates){
   const weight=[{color:"#10b981", values:dates.map(ds=>{
     const e=data.entries[ds]; return e&&e.w!=null?e.w:null;
   })}];
-  const vol=[{color:"#8b5cf6", values:dates.map(ds=>{
-    const v=dayVolume(ds); return v>0?v:null;
-  })}];
   const kcal=[{color:"#f97316", values:dates.map(ds=>dayKcal(ds))}];
-  return {macro,weight,vol,kcal};
+  return {macro,weight,kcal};
 }
 
 /* ---------- 周表 ---------- */
@@ -665,7 +685,6 @@ function renderWeek(){
   drawChart("week-kcal", short, s.kcal, true);
   drawChart("week-macro", short, s.macro, true);
   drawChart("week-weight", short, s.weight, false);
-  drawChart("week-vol", short, s.vol, true);
 }
 
 /* ---------- 月表 ---------- */
@@ -686,7 +705,6 @@ function renderMonth(){
   drawChart("month-kcal", short, s.kcal, true);
   drawChart("month-macro", short, s.macro, true);
   drawChart("month-weight", short, s.weight, false);
-  drawChart("month-vol", short, s.vol, true);
 }
 
 /* ---------- 设置 ---------- */
@@ -705,14 +723,14 @@ function download(name, content, type){
   setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500);
 }
 function exportCSV(){
-  let csv="﻿日期,总热量(kcal),碳水(g),脂肪(g),蛋白质(g),额外卡路里(kcal),体重(kg),训练容量(kg)\n";
-  const allDates=new Set([...Object.keys(data.entries), ...Object.keys(data.workouts), ...Object.keys(data.meals)]);
+  let csv="﻿日期,训练日,总热量(kcal),碳水(g),脂肪(g),蛋白质(g),额外卡路里(kcal),体重(kg),训练容量(kg)\n";
+  const allDates=new Set([...Object.keys(data.entries), ...Object.keys(data.workouts), ...Object.keys(data.meals), ...Object.keys(data.days)]);
   [...allDates].sort().forEach(ds=>{
     const e=data.entries[ds]||{};
     const v=dayVolume(ds);
     const kc=dayKcal(ds);
     const t=kc!=null?dayMacro(ds):null;
-    csv+=[ds, kc!=null?Math.round(kc):"", t?t.c:"", t?t.f:"", t?t.p:"", t?t.x:"", e.w??"", v>0?Math.round(v):""].join(",")+"\n";
+    csv+=[ds, data.days[ds]||"", kc!=null?Math.round(kc):"", t?t.c:"", t?t.f:"", t?t.p:"", t?t.x:"", e.w??"", v>0?Math.round(v):""].join(",")+"\n";
   });
   download("营养记录_"+todayStr()+".csv", csv, "text/csv");
   toast("已导出 CSV");
@@ -728,11 +746,12 @@ function exportMealCSV(){
   toast("已导出饮食明细");
 }
 function exportLiftCSV(){
-  let csv="﻿日期,动作,重量(kg),次数,组数,容量(kg),状态\n";
+  let csv="﻿日期,训练日,动作,重量(kg),次数,组数,容量(kg),状态\n";
   Object.keys(data.workouts).sort().forEach(ds=>{
     const mood=data.moods[ds]||"";
+    const day=data.days[ds]||"";
     data.workouts[ds].forEach(x=>{
-      csv+=[ds, x.n, x.w>0?x.w:"自重", x.r, x.s, Math.round(liftVol(ds,x)), mood].join(",")+"\n";
+      csv+=[ds, day, x.n, x.w>0?x.w:"自重", x.r, x.s, Math.round(liftVol(ds,x)), mood].join(",")+"\n";
     });
   });
   download("力训明细_"+todayStr()+".csv", csv, "text/csv");
@@ -753,6 +772,7 @@ function importJSON(input){
       if(d.workouts) Object.assign(data.workouts, d.workouts);
       if(d.meals) Object.assign(data.meals, d.meals);
       if(d.moods) Object.assign(data.moods, d.moods);
+      if(d.days) Object.assign(data.days, d.days);
       if(d.goals) Object.assign(data.goals, d.goals);
       migrate(data);
       persist(); initSettings(); loadEntryToForm();
@@ -764,7 +784,7 @@ function importJSON(input){
 }
 function clearAll(){
   if(confirm("确定要清空全部记录吗?此操作不可恢复,建议先导出备份。")){
-    data={goals:data.goals, titles:data.titles, pr:data.pr, entries:{}, workouts:{}, meals:{}, moods:{}};
+    data={goals:data.goals, titles:data.titles, pr:data.pr, entries:{}, workouts:{}, meals:{}, moods:{}, days:{}};
     persist(); loadEntryToForm(); renderLift(); toast("已清空");
   }
 }
