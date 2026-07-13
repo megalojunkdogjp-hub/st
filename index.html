@@ -732,7 +732,7 @@ function exportCSV(){
     const t=kc!=null?dayMacro(ds):null;
     csv+=[ds, data.days[ds]||"", kc!=null?Math.round(kc):"", t?t.c:"", t?t.f:"", t?t.p:"", t?t.x:"", e.w??"", v>0?Math.round(v):""].join(",")+"\n";
   });
-  download("营养记录_"+todayStr()+".csv", csv, "text/csv");
+  download("ST_汇总_"+todayStr()+".csv", csv, "text/csv");
   toast("已导出 CSV");
 }
 function exportMealCSV(){
@@ -742,7 +742,7 @@ function exportMealCSV(){
       csv+=[ds, m.n||"", m.c??"", m.f??"", m.p??"", m.x??"", Math.round(mealKcal(m))].join(",")+"\n";
     });
   });
-  download("饮食明细_"+todayStr()+".csv", csv, "text/csv");
+  download("ST_饮食_"+todayStr()+".csv", csv, "text/csv");
   toast("已导出饮食明细");
 }
 function exportLiftCSV(){
@@ -754,11 +754,11 @@ function exportLiftCSV(){
       csv+=[ds, day, x.n, x.w>0?x.w:"自重", x.r, x.s, Math.round(liftVol(ds,x)), mood].join(",")+"\n";
     });
   });
-  download("力训明细_"+todayStr()+".csv", csv, "text/csv");
+  download("ST_力训_"+todayStr()+".csv", csv, "text/csv");
   toast("已导出力训明细");
 }
 function exportJSON(){
-  download("营养记录备份_"+todayStr()+".json", JSON.stringify(data,null,2), "application/json");
+  download("ST_"+todayStr()+".json", JSON.stringify(data,null,2), "application/json");
   toast("已导出备份");
 }
 function importJSON(input){
