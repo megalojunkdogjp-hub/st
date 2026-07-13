@@ -774,8 +774,11 @@ function importJSON(input){
       if(d.moods) Object.assign(data.moods, d.moods);
       if(d.days) Object.assign(data.days, d.days);
       if(d.goals) Object.assign(data.goals, d.goals);
+      if(d.pr) Object.assign(data.pr, d.pr);
+      if(d.titles) Object.assign(data.titles, d.titles);
       migrate(data);
-      persist(); initSettings(); loadEntryToForm();
+      persist(); initSettings(); loadEntryToForm(); renderPR();
+      document.getElementById("hdr").textContent=getTitle(curPage);
       toast("导入成功 ✓");
     }catch(e){ toast("文件格式不正确"); }
     input.value="";
